@@ -4,15 +4,18 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
 import android.view.View;
-import android.widget.Button;
 import android.widget.TextView;
+
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
 
 public class MainActivity extends AppCompatActivity {
 
     TextView workingsTV;
     TextView resultsTV;
     String workings = "";
-
+    boolean lastInputIsOperator = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -22,23 +25,55 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initTextViews() {
-        workingsTV=(TextView)findViewById(R.id.workingsTextView);
-        resultsTV=(TextView)findViewById(R.id.resultTextView);
+        workingsTV = findViewById(R.id.workingsTextView);
+        resultsTV = findViewById(R.id.resultTextView);
     }
 
-    public void setWorkings(String givenValue){
+    public void setWorkings(String givenValue) {
+        if (isOperator(givenValue) && lastInputIsOperator) {
+            return; // Do not add operator if the last input was an operator
+        }
+
         workings = workings + givenValue;
         workingsTV.setText(workings);
+
+        lastInputIsOperator = isOperator(givenValue);
+    }
+
+    private boolean isOperator(String value) {
+        return value.equals("/") || value.equals("*") || value.equals("-") || value.equals("+");
     }
 
     public void clearOnClick(View view) {
         workingsTV.setText("");
         workings = "";
         resultsTV.setText("");
+        lastInputIsOperator = false;
     }
 
     public void equalOnClick(View view) {
+        try {
+            String result = evaluateExpression(workings);
+            resultsTV.setText(result);
+        } catch (ScriptException e) {
+            resultsTV.setText("Error");
+        }
+    }
 
+    private String evaluateExpression(String expression) throws ScriptException {
+        ScriptEngine engine = new ScriptEngineManager().getEngineByName("rhino");
+        Object result = engine.eval(expression);
+
+        if (result instanceof Double) {
+            double doubleResult = (Double) result;
+            if (doubleResult == (int) doubleResult) {
+                return String.valueOf((int) doubleResult);
+            } else {
+                return String.format("%.2f", doubleResult);
+            }
+        } else {
+            return result.toString();
+        }
     }
 
     public void divisionOnClick(View view) {
@@ -97,38 +132,4 @@ public class MainActivity extends AppCompatActivity {
         setWorkings("7");
     }
 
-
-//    TextView firsttext, secondtext, thirdtext;
-//    Button firstbutton, secondbutton, thirdbutton;
-//    @Override
-//    protected void onCreate(Bundle savedInstanceState) {
-//        super.onCreate(savedInstanceState);
-//        setContentView(R.layout.activity_main);
-//
-//        firsttext = findViewById(R.id.firsttext);
-//        firstbutton = findViewById(R.id.firstbutton);
-//        firstbutton.setOnClickListener(new View.OnClickListener(){
-//           @Override
-//           public void onClick(View view){
-//               firsttext.setText("Hello world");
-//           }
-//        });
-//        secondtext = findViewById(R.id.secondtext);
-//        secondbutton = findViewById(R.id.secondbutton);
-//        secondbutton.setOnClickListener(new View.OnClickListener(){
-//            @Override
-//            public void onClick(View view){
-//                secondtext.setText("Iryna Mariash");
-//            }
-//        });
-//        thirdtext = findViewById(R.id.thirdtext);
-//        thirdbutton = findViewById(R.id.thirdbutton);
-//        thirdbutton.setOnClickListener(new View.OnClickListener(){
-//            @Override
-//            public void onClick(View view){
-//                thirdtext.setText("Bye");
-//            }
-//        });
-//
-//    }
 }
